@@ -171,6 +171,16 @@ __declspec(dllexport) void TITCALL Getx87FPURegisters(x87FPURegister_t x87FPUReg
     emu.Getx87FPURegisters(x87FPURegisters, titcontext);
 }
 
+__declspec(dllexport) bool TITCALL GetAVX512Context(HANDLE hActiveThread, TITAN_ENGINE_CONTEXT_AVX512_t* titcontext)
+{
+    return false;
+}
+
+__declspec(dllexport) bool TITCALL SetAVX512Context(HANDLE hActiveThread, TITAN_ENGINE_CONTEXT_AVX512_t* titcontext)
+{
+    return false;
+}
+
 //PE
 __declspec(dllexport) bool TITCALL StaticFileLoad(const char* szFileName, DWORD DesiredAccess, bool SimulateLoad, LPHANDLE FileHandle, LPDWORD LoadedSize, LPHANDLE FileMap, PULONG_PTR FileMapVA)
 {
