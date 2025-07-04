@@ -1174,7 +1174,7 @@ private: //functions
     {
         auto p_RtlGetVersion = (NTSTATUS(WINAPI*)(PRTL_OSVERSIONINFOW))GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlGetVersion");
         RTL_OSVERSIONINFOW info = { sizeof(info) };
-        if (p_RtlGetVersion && p_RtlGetVersion(&info) == 0)
+        if(p_RtlGetVersion && p_RtlGetVersion(&info) == 0)
             return info.dwBuildNumber;
         else
             return 0;
@@ -1184,7 +1184,7 @@ private: //functions
     {
         // https://www.vergiliusproject.com/kernels/x64/Windows%2010%20%7C%202016/1507%20Threshold%201/_KUSER_SHARED_DATA
         auto NtBuildNumber = *(DWORD*)(0x7FFE0000 + 0x260);
-        if (NtBuildNumber == 0)
+        if(NtBuildNumber == 0)
         {
             // Older versions of Windows
             static DWORD NtBuildNumber7 = GetNtBuildNumberWindows7();

@@ -601,8 +601,8 @@ typedef struct
 
 typedef struct
 {
-	YmmRegister_t Low; //AVX part
-	YmmRegister_t High; //AVX-512 part
+    YmmRegister_t Low; //AVX part
+    YmmRegister_t High; //AVX-512 part
 } ZmmRegister_t;
 
 typedef struct
