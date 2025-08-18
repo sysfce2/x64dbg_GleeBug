@@ -148,10 +148,6 @@ static bool SetAVXContext(HANDLE hActiveThread, TITAN_ENGINE_CONTEXT_t* titconte
     if(InitXState() == false)
         return false;
 
-    DWORD64 FeatureMask = _GetEnabledXStateFeatures();
-    if((FeatureMask & XSTATE_MASK_AVX) == 0)
-        return false;
-
     DWORD ContextSize = 0;
     BOOL Success = _InitializeContext(NULL,
                                       CONTEXT_ALL | CONTEXT_XSTATE,
@@ -176,11 +172,15 @@ static bool SetAVXContext(HANDLE hActiveThread, TITAN_ENGINE_CONTEXT_t* titconte
         return false;
 
     if(_SetXStateFeaturesMask(Context, XSTATE_MASK_AVX) == FALSE)
-        return false;
+    {
+        if(_SetXStateFeaturesMask(Context, XSTATE_MASK_LEGACY_SSE) == FALSE)
+            return false;
+    }
 
     if(GetThreadContext(hActiveThread, Context) == FALSE)
         return false;
 
+    DWORD64 FeatureMask = 0;
     if(_GetXStateFeaturesMask(Context, &FeatureMask) == FALSE)
         return false;
 
@@ -209,10 +209,6 @@ static bool GetAVXContext(HANDLE hActiveThread, TITAN_ENGINE_CONTEXT_t* titconte
     if(InitXState() == false)
         return false;
 
-    DWORD64 FeatureMask = _GetEnabledXStateFeatures();
-    if((FeatureMask & XSTATE_MASK_AVX) == 0)
-        return false;
-
     DWORD ContextSize = 0;
     BOOL Success = _InitializeContext(NULL,
                                       CONTEXT_ALL | CONTEXT_XSTATE,
@@ -237,11 +233,15 @@ static bool GetAVXContext(HANDLE hActiveThread, TITAN_ENGINE_CONTEXT_t* titconte
         return false;
 
     if(_SetXStateFeaturesMask(Context, XSTATE_MASK_AVX) == FALSE)
-        return false;
+    {
+        if(_SetXStateFeaturesMask(Context, XSTATE_MASK_LEGACY_SSE) == FALSE)
+            return false;
+    }
 
     if(GetThreadContext(hActiveThread, Context) == FALSE)
         return false;
 
+    DWORD64 FeatureMask = 0;
     if(_GetXStateFeaturesMask(Context, &FeatureMask) == FALSE)
         return false;
 
