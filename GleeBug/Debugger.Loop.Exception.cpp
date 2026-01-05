@@ -6,7 +6,8 @@ namespace GleeBug
     void Debugger::exceptionBreakpoint(const EXCEPTION_RECORD & exceptionRecord, const bool firstChance)
     {
         //check if the breakpoint exists
-        auto foundInfo = mProcess->breakpoints.find({ BreakpointType::Software, ptr(exceptionRecord.ExceptionAddress) });
+        auto exceptionAddress = ptr(exceptionRecord.ExceptionAddress);
+        auto foundInfo = mProcess->breakpoints.find({ BreakpointType::Software, exceptionAddress });
         if(foundInfo == mProcess->breakpoints.end())
         {
             if(!this->mAttachedToProcess && !mProcess->systemBreakpoint) //handle system breakpoint
@@ -17,6 +18,20 @@ namespace GleeBug
 
                 //call the callback
                 cbSystemBreakpoint();
+            }
+            else
+            {
+                //check if this was a deleted breakpoint
+                //if the byte at the exception address is not 0xCC, our breakpoint was deleted
+                //and we should set IP back and continue execution
+                uint8 currentByte = 0xCC;
+                if(mThread && mProcess->MemReadUnsafe(exceptionAddress, &currentByte, 1) && currentByte != 0xCC)
+                {
+                    //this was our deleted breakpoint, set IP back and continue
+                    Registers(mThread->hThread, CONTEXT_CONTROL).Gip = exceptionAddress;
+                    mContinueStatus = DBG_CONTINUE;
+                }
+                //else: byte is 0xCC, this is a real int3 in original code, let debuggee handle it
             }
             return;
         }
@@ -30,12 +45,26 @@ namespace GleeBug
         Registers(mThread->hThread, CONTEXT_CONTROL).Gip = info.address;
 
         //restore the original breakpoint byte and do an internal step
-        mProcess->MemWriteUnsafe(info.address, info.internal.software.oldbytes, info.internal.software.size);
+        if(!mProcess->MemWriteUnsafe(info.address, info.internal.software.oldbytes, info.internal.software.size))
+        {
+            //failed to restore original byte, pass exception to debuggee
+            mContinueStatus = DBG_EXCEPTION_NOT_HANDLED;
+            return;
+        }
         mProcess->StepInternal([this, info]()
         {
             //only restore the bytes if the breakpoint still exists
-            if(mProcess->breakpoints.find({ BreakpointType::Software, info.address }) != mProcess->breakpoints.end())
-                mProcess->MemWriteUnsafe(info.address, info.internal.software.newbytes, info.internal.software.size);
+            auto foundBreakpoint = mProcess->breakpoints.find({ BreakpointType::Software, info.address });
+            if(foundBreakpoint != mProcess->breakpoints.end())
+            {
+                if(!mProcess->MemWriteUnsafe(info.address, info.internal.software.newbytes, info.internal.software.size))
+                {
+                    //failed to restore breakpoint byte, remove from maps to stay consistent
+                    mProcess->softwareBreakpointReferences.erase(info.address);
+                    mProcess->breakpoints.erase(foundBreakpoint);
+                    mProcess->breakpointCallbacks.erase({ BreakpointType::Software, info.address });
+                }
+            }
         });
 
         //call the generic callback

@@ -65,8 +65,58 @@ namespace GleeBug
 
     bool Process::MemWriteSafe(ptr address, const void* buffer, ptr size, ptr* bytesWritten)
     {
-        //TODO: correctly implement this
-        return MemWrite(address, buffer, size, bytesWritten, false);
+        if(size == 0)
+        {
+            if(bytesWritten)
+                *bytesWritten = 0;
+            return true;
+        }
+
+        std::vector<uint8> copy((const uint8*)buffer, (const uint8*)buffer + size);
+
+        auto start = address;
+        auto end = start + size;
+
+        //find overlapping software breakpoints and preserve their 0xCC bytes in the copy (so write doesn't remove breakpoints)
+        //as well as track what oldbytes values need updating after successful write
+        std::vector<std::tuple<uint8*, uint8, ptr>> pendingUpdates; //tuple: (pointer to oldbyte, new value, offset from start for partial write handling)
+
+        for(auto & breakpoint : breakpoints)
+        {
+            if(breakpoint.first.first != BreakpointType::Software)
+                continue;
+            auto & info = breakpoint.second;
+            auto curAddress = info.address;
+            for(ptr j = 0; j < info.internal.software.size; j++)
+            {
+                if(curAddress + j >= start && curAddress + j < end)
+                {
+                    auto offset = curAddress + j - start;
+                    pendingUpdates.emplace_back(&info.internal.software.oldbytes[j], copy[offset], offset);
+                    copy[offset] = info.internal.software.newbytes[j];
+                }
+            }
+        }
+
+        //write to memory (breakpoint bytes are preserved in the copy)
+        ptr written = 0;
+        if(!MemWriteUnsafe(address, copy.data(), size, &written))
+        {
+            if(bytesWritten)
+                *bytesWritten = written;
+            return false;
+        }
+
+        //apply oldbytes updates only for bytes that were actually written
+        for(const auto & update : pendingUpdates)
+        {
+            if(std::get<2>(update) < written)
+                *std::get<0>(update) = std::get<1>(update);
+        }
+
+        if(bytesWritten)
+            *bytesWritten = written;
+        return true;
     }
 
     bool Process::MemIsValidPtr(ptr address) const
