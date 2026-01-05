@@ -143,7 +143,10 @@ namespace GleeBug
 
         //if the breakpoint was deleted during callback, clear internal stepping to prevent thread suspension
         if(mProcess->breakpoints.find({ BreakpointType::Hardware, info.address }) == mProcess->breakpoints.end())
+        {
             mThread->isInternalStepping = false;
+            Registers(mThread->hThread, CONTEXT_CONTROL).TrapFlag = false;
+        }
 
         //delete the breakpoint if it is singleshoot
         if(info.singleshoot)
