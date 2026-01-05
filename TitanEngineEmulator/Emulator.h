@@ -821,6 +821,10 @@ public:
     {
         if(!mProcess)
             return false;
+        //convert from UE_DRx (11-14) to slot index (0-3)
+        auto slot = (HardwareSlot)(IndexOfRegister - UE_DR0);
+        if((DWORD)slot > 3)
+            return false;
         auto running = mIsRunning;
         if(running)
         {
@@ -828,7 +832,7 @@ public:
                 thread.second->Suspend();
         }
         if(!mProcess->SetHardwareBreakpoint(bpxAddress,
-                                            (HardwareSlot)IndexOfRegister, [bpxCallBack](const BreakpointInfo & info)
+                                            slot, [bpxCallBack](const BreakpointInfo & info)
     {
         (HWBPCALLBACK(bpxCallBack))((const void*)info.address);
         }, hwtypeFromTitan(bpxType), hwsizeFromTitan(bpxSize)))
@@ -843,9 +847,11 @@ public:
 
     bool DeleteHardwareBreakPoint(DWORD IndexOfRegister)
     {
-        if(!mProcess || IndexOfRegister > 3)
+        //convert from UE_DRx (11-14) to slot index (0-3)
+        auto slot = IndexOfRegister - UE_DR0;
+        if(!mProcess || slot > 3)
             return false;
-        auto address = mProcess->hardwareBreakpoints[IndexOfRegister].address;
+        auto address = mProcess->hardwareBreakpoints[slot].address;
         return mProcess->DeleteHardwareBreakpoint(address);
     }
 
@@ -856,7 +862,7 @@ public:
         HardwareSlot slot;
         bool result = mProcess->GetFreeHardwareBreakpointSlot(slot);
         if(result)
-            *RegisterIndex = (DWORD)slot;
+            *RegisterIndex = UE_DR0 + (DWORD)slot;  //UE_DR0-UE_DR3 (11-14), not 0-3
         return result;
     }
 
