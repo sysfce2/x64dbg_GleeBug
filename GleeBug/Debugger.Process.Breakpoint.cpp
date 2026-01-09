@@ -68,6 +68,8 @@ namespace GleeBug
             return false;
         FlushInstructionCache(hProcess, nullptr, 0);
 
+        recentlyDeletedSwbp.push_back(address);
+
         //remove the breakpoint from the maps
         softwareBreakpointReferences.erase(info.address);
         breakpoints.erase(found);

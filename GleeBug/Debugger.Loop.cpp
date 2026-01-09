@@ -40,6 +40,8 @@ namespace GleeBug
             IsDbgReplyLaterSupported = mSafeStep;
         }
 
+        uint32 consecutiveTimeouts = 0;
+
         while(!mBreakDebugger)
         {
             //wait for a debug event
@@ -65,10 +67,17 @@ namespace GleeBug
 #endif
                 else
                 {
-                    // Regular timeout, wait again
+                    //after 2 consecutive timeouts, clear recently deleted breakpoints
+                    //any stale events would have been delivered by now
+                    consecutiveTimeouts++;
+                    if(consecutiveTimeouts >= 2 && mProcess)
+                        mProcess->recentlyDeletedSwbp.clear();
                     continue;
                 }
             }
+
+            //event received, reset timeout counter
+            consecutiveTimeouts = 0;
 
             // Handle safe stepping
             if(IsDbgReplyLaterSupported)

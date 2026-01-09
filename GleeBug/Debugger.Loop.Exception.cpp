@@ -21,17 +21,14 @@ namespace GleeBug
             }
             else
             {
-                //check if this was a deleted breakpoint
-                //if the byte at the exception address is not 0xCC, our breakpoint was deleted
-                //and we should set IP back and continue execution
-                uint8 currentByte = 0xCC;
-                if(mThread && mProcess->MemReadUnsafe(exceptionAddress, &currentByte, 1) && currentByte != 0xCC)
+                //check if this address had a breakpoint that was recently deleted
+                auto& deletedBps = mProcess->recentlyDeletedSwbp;
+                auto foundIt = std::find(deletedBps.begin(), deletedBps.end(), exceptionAddress);
+                if(foundIt != deletedBps.end() && mThread)
                 {
-                    //this was our deleted breakpoint, set IP back and continue
                     Registers(mThread->hThread, CONTEXT_CONTROL).Gip = exceptionAddress;
                     mContinueStatus = DBG_CONTINUE;
                 }
-                //else: byte is 0xCC, this is a real int3 in original code, let debuggee handle it
             }
             return;
         }

@@ -32,6 +32,8 @@ namespace GleeBug
         MemoryBreakpointSet memoryBreakpointRanges;
         MemoryBreakpointMap memoryBreakpointPages;
 
+        std::vector<ptr> recentlyDeletedSwbp;
+
         /**
         \brief Constructor.
         \param hProcess Process handle.
