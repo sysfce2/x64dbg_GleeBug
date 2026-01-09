@@ -32,7 +32,7 @@ namespace GleeBug
         MemoryBreakpointSet memoryBreakpointRanges;
         MemoryBreakpointMap memoryBreakpointPages;
 
-        std::vector<ptr> recentlyDeletedSwbp;
+        std::unordered_set<ptr> recentlyDeletedSwbp;
 
         /**
         \brief Constructor.

@@ -23,7 +23,7 @@ namespace GleeBug
             {
                 //check if this address had a breakpoint that was recently deleted
                 auto& deletedBps = mProcess->recentlyDeletedSwbp;
-                auto foundIt = std::find(deletedBps.begin(), deletedBps.end(), exceptionAddress);
+                auto foundIt = deletedBps.find(exceptionAddress);
                 if(foundIt != deletedBps.end() && mThread)
                 {
                     Registers(mThread->hThread, CONTEXT_CONTROL).Gip = exceptionAddress;
