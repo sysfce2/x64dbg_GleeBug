@@ -183,12 +183,12 @@ namespace GleeBug
     #define PAGE_NOACCESS          0x01
     #define PAGE_READONLY          0x02
     #define PAGE_READWRITE         0x04
-    #define PAGE_WRITECOPY         0x08 <- not supported
+    #define PAGE_WRITECOPY         0x08
 
     #define PAGE_EXECUTE           0x10
     #define PAGE_EXECUTE_READ      0x20
     #define PAGE_EXECUTE_READWRITE 0x40
-    #define PAGE_EXECUTE_WRITECOPY 0x80 <- not supported
+    #define PAGE_EXECUTE_WRITECOPY 0x80
 
     #define PAGE_GUARD            0x100 <- not supported with PAGE_NOACCESS
     #define PAGE_NOCACHE          0x200 <- not supported with PAGE_GUARD or PAGE_WRITECOMBINE
@@ -215,12 +215,16 @@ namespace GleeBug
 
     static DWORD RemoveWriteAccess(DWORD dwAccess)
     {
+        //Removes write permissions and write-on-copy to trigger access violation.
         DWORD dwBase = dwAccess & 0xFF;
         switch(dwBase)
         {
         case PAGE_READWRITE:
+        case PAGE_WRITECOPY:
+            return (dwAccess & 0xFFFFFF00) | PAGE_READONLY;
         case PAGE_EXECUTE_READWRITE:
-            return (dwAccess & 0xFFFFFF00) | (dwBase >> 1);
+        case PAGE_EXECUTE_WRITECOPY:
+            return (dwAccess & 0xFFFFFF00) | PAGE_EXECUTE_READ;
         default:
             return dwAccess;
         }
