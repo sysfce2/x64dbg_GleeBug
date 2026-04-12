@@ -218,8 +218,8 @@ namespace GleeBug
         {
             uint16 index;
             IMAGE_SECTION_HEADER header; //by value to prevent pointer invalidation
-            Region<uint8> beforeData;
-            Region<uint8> data;
+            Region<uint8> beforeData{};
+            Region<uint8> data{};
         };
 
         //sort sections on raw address to prevent read errors and have a contiguous buffer
@@ -292,7 +292,7 @@ namespace GleeBug
             //offset -> section index
             auto offset = section.GetHeader().PointerToRawData;
             //bigSoRD.exe: if raw size is bigger than virtual size, then virtual size is taken.
-            auto rsize = min(section.GetHeader().SizeOfRawData, section.GetHeader().Misc.VirtualSize);
+            auto rsize = std::min(section.GetHeader().SizeOfRawData, section.GetHeader().Misc.VirtualSize);
             if(!rsize) //65535sects.exe
                 continue;
             mOffsetSectionMap.insert({ Range(offset, offset + rsize - 1), section.GetIndex() });

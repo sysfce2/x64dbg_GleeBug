@@ -9,3 +9,10 @@ docs/
 .vs/
 *.VC.db
 *.aps
+
+# cmkr
+build*/
+cmake-build*/
+CMakerLists.txt
+CMakeLists.txt.user
+CMakeUserPresets.json

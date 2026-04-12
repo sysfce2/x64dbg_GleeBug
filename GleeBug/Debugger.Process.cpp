@@ -57,8 +57,9 @@ namespace GleeBug
         case ZYDIS_MNEMONIC_SCASD:
         case ZYDIS_MNEMONIC_SCASQ:
             return (info.attributes & (ZYDIS_ATTRIB_HAS_REP | ZYDIS_ATTRIB_HAS_REPZ | ZYDIS_ATTRIB_HAS_REPNZ)) != 0;
+        default:
+            return false;
         }
-        return false;
     }
 
     void Process::StepOver(const StepCallback & cbStep)

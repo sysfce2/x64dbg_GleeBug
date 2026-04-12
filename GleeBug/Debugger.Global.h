@@ -8,6 +8,10 @@
 #define GLEEBUG_HWBP_COUNT 4
 #define GLEEBUG_PAGE_SIZE 0x1000
 
+#ifndef PAGE_SIZE
+#define PAGE_SIZE 0x1000
+#endif // PAGE_SIZE
+
 namespace GleeBug
 {
     //forward declarations
@@ -19,9 +23,7 @@ namespace GleeBug
     struct BreakpointInfo;
     struct MemoryBreakpointData;
 
-    //constants
     const int HWBP_COUNT = GLEEBUG_HWBP_COUNT;
-    const int PAGE_SIZE = GLEEBUG_PAGE_SIZE;
 
     //key typedefs
     typedef std::pair<BreakpointType, ptr> BreakpointKey;

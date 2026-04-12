@@ -30,7 +30,6 @@ namespace GleeBug
         SIZE_4 = 3 //11
     };
 
-#pragma pack(1)
     struct DR7
     {
         BYTE DR7_MODE[HWBP_COUNT];

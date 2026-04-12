@@ -1,6 +1,6 @@
 #include <GleeBug/Debugger.h>
 #include <GleeBug/Static.Pe.h>
-#include <GleeBug/Static.Bufferfile.h>
+#include <GleeBug/Static.BufferFile.h>
 #include <GleeBug/Debugger.Thread.Registers.h>
 #include <GleeBug/stringutils.h>
 #include "TitanEngine.h"
@@ -1060,10 +1060,10 @@ private: //functions
             THREAD_BASIC_INFORMATION tbi;
             if(!getThreadInfo(hThread, tbi))
                 return nullptr;
-            auto foundP = mProcesses.find(uint32(tbi.ClientId.UniqueProcess));
+            auto foundP = mProcesses.find(uint32(uintptr_t(tbi.ClientId.UniqueProcess)));
             if(foundP == mProcesses.end())
                 return nullptr;
-            auto foundT = foundP->second->threads.find(uint32(tbi.ClientId.UniqueThread));
+            auto foundT = foundP->second->threads.find(uint32(uintptr_t(tbi.ClientId.UniqueThread)));
             if(foundT == foundP->second->threads.end())
                 return nullptr;
             return foundT->second.get();
@@ -1277,7 +1277,7 @@ private: //functions
     }
 #endif
 
-    bool EngineExtractResource(char* szResourceName, wchar_t* szExtractedFileName)
+    bool EngineExtractResource(const char* szResourceName, const wchar_t* szExtractedFileName)
     {
         bool result = false;
         HRSRC hResource = FindResourceA(engineHandle, (LPCSTR)szResourceName, "BINARY");

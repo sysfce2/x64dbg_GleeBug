@@ -12,13 +12,22 @@ extern "C" {
 #endif
 #include <Windows.h>
 #undef WIN32_NO_STATUS
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4005) // ntstatus.h can collide with winnt.h in unity builds
+#endif
 #include <ntstatus.h>
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #include <intrin.h>
 
 #define NT_SUCCESS(Status)              ((NTSTATUS)(Status) >= 0)
 #define NT_ERROR(Status)                ((((ULONG)(Status)) >> 30) == 3)
 
+#ifndef FASTCALL
 #define FASTCALL __fastcall
+#endif
 
 #ifndef _Reserved_
 #define _Reserved_

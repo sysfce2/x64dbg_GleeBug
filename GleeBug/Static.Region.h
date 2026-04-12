@@ -16,7 +16,7 @@ namespace GleeBug
         /**
         \brief Default constructor (constructs an invalid region).
         */
-        explicit Region()
+        Region()
             : Region(nullptr, INVALID_VALUE, INVALID_VALUE)
         {
         }
