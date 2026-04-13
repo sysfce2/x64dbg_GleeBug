@@ -22,7 +22,7 @@ namespace GleeBug
             else
             {
                 //check if this address had a breakpoint that was recently deleted
-                auto& deletedBps = mProcess->recentlyDeletedSwbp;
+                auto & deletedBps = mProcess->recentlyDeletedSwbp;
                 auto foundIt = deletedBps.find(exceptionAddress);
                 if(foundIt != deletedBps.end() && mThread)
                 {
@@ -260,56 +260,35 @@ namespace GleeBug
         auto pageAddr = bpxPage->first;
         auto pageProperties = bpxPage->second;
 
-        //TODO: If I only have a page with Read bp and the exception was not on read, I don't execute the callback. Because since this was implemented with PAGE_GUARD, writtes or executes still trigger
-        //This callback.
-        //FIX: If the memoryBreakpointPages for this page does not have a access flag and has a read flag, but the exception was not on read. Then we resume the debuggee.
-        if((exceptionRecord.ExceptionInformation[0] != 0))
+        // PAGE_GUARD is shared by access/read/write/execute breakpoints, so the exception type in
+        // ExceptionInformation[0] decides whether this guard-page fault actually belongs to this breakpoint.
+        // Access breakpoints intentionally match every access type.
+        const auto accessType = exceptionRecord.ExceptionInformation[0];
+        const auto isAccessBreakpoint = (pageProperties.Type & 0x1) != 0;
+        const auto matchesRead = accessType == 0 && (((pageProperties.Type & 0x2) != 0) || isAccessBreakpoint);
+        const auto matchesWrite = accessType == 1 && (((pageProperties.Type & 0x4) != 0) || isAccessBreakpoint);
+        const auto matchesExecute = accessType == 8 && (((pageProperties.Type & 0x8) != 0) || isAccessBreakpoint);
+        if(!matchesRead && !matchesWrite && !matchesExecute)
         {
-            //The bpx is solely on read.
-            if(((pageProperties.Type & 0x2) != 0) && ((pageProperties.Type & 0x1) == 0))
+            mContinueStatus = DBG_CONTINUE;
+            // This page belongs to some memory breakpoint, but not one that should trigger on this access type.
+            // Restore the original protection, single-step the faulting instruction, then re-apply the guard/page
+            // permissions if the page is still tracked by any memory breakpoint.
+            if(!mProcess->MemProtect(pageAddr, PAGE_SIZE, pageProperties.OldProtect))
             {
-                mContinueStatus = DBG_CONTINUE;
-                //We restore the protection
-                if(!mProcess->MemProtect(pageAddr, PAGE_SIZE, pageProperties.OldProtect))
-                {
-                    sprintf_s(error, "MemProtect failed on 0x%p", (void*)pageAddr);
-                    cbInternalError(error);
-                }
+                sprintf_s(error, "MemProtect failed on 0x%p", (void*)pageAddr);
+                cbInternalError(error);
+            }
 
-                mProcess->StepInternal([this, pageAddr]()
-                {
-                    //seek out the page address
-                    auto found_page = mProcess->memoryBreakpointPages.find(pageAddr);
-                    if(found_page == mProcess->memoryBreakpointPages.end())
-                    {
-                        //no page being used by bpx? Then just return
-                        return;
-                    }
-                    mProcess->MemProtect(pageAddr, PAGE_SIZE, found_page->second.NewProtect);
+            mProcess->StepInternal([this, pageAddr]()
+            {
+                auto found_page = mProcess->memoryBreakpointPages.find(pageAddr);
+                if(found_page == mProcess->memoryBreakpointPages.end())
                     return;
-                });
+                mProcess->MemProtect(pageAddr, PAGE_SIZE, found_page->second.NewProtect);
                 return;
-            }
-            else if(((pageProperties.Type & 0x1) != 0))
-            {
-                //We are fine if the breakpoint is on Access and somethine other than a read occurred.
-            }
-            else
-            {
-                //This exception handler was called within a page that had no breakpoints on read or access. Probably the program generated this exception! what a 0x1337 brat.
-                //In this situation we return control to debuggee.
-                return;
-            }
-
-        }
-        else
-        {
-            //The generated exception is on read.
-            //If the page doesn't have a breakpoint on read or on access then something else must have gone wrong - we pass execution to debuggee.
-            if((!(pageProperties.Type & 0x2)) && (!(pageProperties.Type & 0x1)))
-            {
-                return;
-            }
+            });
+            return;
         }
 
 
