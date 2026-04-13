@@ -199,6 +199,9 @@ public:
         case UE_ENGINE_DISABLE_ASLR:
             mDisableAslr = VariableSet;
             break;
+        case UE_ENGINE_NO_CONSOLE_WINDOW:
+            mNoConsoleWindow = VariableSet;
+            break;
         }
     }
 

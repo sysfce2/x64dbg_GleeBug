@@ -40,7 +40,9 @@ namespace GleeBug
 
         auto creationFlags = DEBUG_PROCESS;
         creationFlags |= DEBUG_ONLY_THIS_PROCESS; // TODO: support child process debugging
-        if(newConsole)
+        if(mNoConsoleWindow)
+            creationFlags |= CREATE_NO_WINDOW;
+        else if(newConsole)
             creationFlags |= CREATE_NEW_CONSOLE;
         if(startSuspended)
             creationFlags |= CREATE_SUSPENDED;

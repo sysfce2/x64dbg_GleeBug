@@ -294,6 +294,7 @@ namespace GleeBug
         bool mAttachedToProcess = false;
         bool mSafeStep = true;
         bool mDisableAslr = false;
+        bool mNoConsoleWindow = false;
 
         /**
         \brief The current process (can be null in some cases).
