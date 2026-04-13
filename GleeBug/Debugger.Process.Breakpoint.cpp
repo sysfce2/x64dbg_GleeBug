@@ -298,12 +298,13 @@ namespace GleeBug
         };
         std::vector<TempMemoryBreakpointData> breakpointData;
         {
-            breakpointData.reserve(size / PAGE_SIZE);
+            breakpointData.reserve(BYTES_TO_PAGES((address - PAGE_ALIGN(address)) + size));
             TempMemoryBreakpointData tempData;
             MemoryBreakpointData data;
             data.Type = uint32(type);
             auto alignedAddress = PAGE_ALIGN(address);
-            for(auto page = alignedAddress; page < alignedAddress + ROUND_TO_PAGES(size); page += PAGE_SIZE)
+            auto alignedEnd = PAGE_ALIGN(address + size - 1);
+            for(auto page = alignedAddress; page <= alignedEnd; page += PAGE_SIZE)
             {
                 MEMORY_BASIC_INFORMATION mbi;
                 if(!VirtualQueryEx(hProcess, LPCVOID(page), &mbi, sizeof(mbi)))
@@ -382,7 +383,8 @@ namespace GleeBug
         //delete the memory breakpoint from the pages
         bool success = true;
         auto alignedAddress = PAGE_ALIGN(info.address);
-        for(auto page = alignedAddress; page < alignedAddress + ROUND_TO_PAGES(info.internal.memory.size); page += PAGE_SIZE)
+        auto alignedEnd = PAGE_ALIGN(info.address + info.internal.memory.size - 1);
+        for(auto page = alignedAddress; page <= alignedEnd; page += PAGE_SIZE)
         {
             auto foundData = memoryBreakpointPages.find(page);
             if(foundData == memoryBreakpointPages.end())
